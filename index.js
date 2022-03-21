@@ -26,6 +26,12 @@ function calculate() {
         {g:[],y:[],b:[]}
     ]
 
+    let allResults = {
+        g: [],
+        y: [],
+        b: []
+    }
+
     for (let i=0; i<6; i++) {
         let input = inputs[i]
         let guessWord = input.value.toLowerCase()
@@ -38,21 +44,40 @@ function calculate() {
         for (let j=0; j<5; j++) {
             let guessLetter = guessWord[j]
             let answerLetter = theWord[j]
-            if (guessLetter===answerLetter) results[j].g.push(guessLetter)
-            else if (theWord.includes(guessLetter)) {
-                let instances = 0
-                let greens = 0
-                for (let k=0; k<theWord.length; k++) {
-                    let innerLetter = theWord[k]
-                    if (innerLetter===guessLetter) instances++
-                    if (guessWord[k]===theWord[k]) greens++
+            if (guessLetter===answerLetter) {
+                results[j].g.push(guessLetter)
+                if (!allResults.g.includes(guessLetter)) {
+                    allResults.g.push(guessLetter)
                 }
+            } else if (theWord.includes(guessLetter)) {
+                let instances = 0 //how many times the guess letter appears in theWord
+                let greens = 0
+                for (let k=0; k<5; k++) {
+                    let innerLetter = theWord[k] //letter of theWord
+                    if (innerLetter===guessLetter) {
+                        instances++
+                        if (guessWord[k]===innerLetter) greens++
+                    }
+                }
+                if (guessLetter==="m") console.log(instances, greens, yellowCount)
                 if (instances > greens + yellowCount) {
                     results[j].y.push(guessLetter)
                     yellowCount++
+                    if (!allResults.y.includes(guessLetter)) {
+                        allResults.y.push(guessLetter)
+                    }
+                } else {
+                    results[j].b.push(guessLetter)
+                    if (!allResults.b.includes(guessLetter)) {
+                        allResults.b.push(guessLetter)
+                    }
                 }
-                else results[j].b.push(guessLetter)
-            } else results[j].b.push(guessLetter)
+            } else {
+                results[j].b.push(guessLetter)
+                if (!allResults.b.includes(guessLetter)) {
+                    allResults.b.push(guessLetter)
+                }
+            }
         }
     }
 
@@ -72,8 +97,12 @@ function calculate() {
             }
             if (skipWord) break;
             for (let letter of results[i].b) {
-                if (word.includes(letter)) {
-                    if (word==="movie") console.log(letter)
+                if (
+                    word.includes(letter) &&
+                    !allResults.g.includes(letter) &&
+                    !allResults.y.includes(letter)
+                ) {
+                    if (word==="movie") console.log(letter, allResults)
                     skipWord = true
                     break;
                 }
@@ -83,7 +112,6 @@ function calculate() {
         if (skipWord) continue
         possibilities.push(word)
     }
-    console.log(results)
     console.log(possibilities)
 }
 
