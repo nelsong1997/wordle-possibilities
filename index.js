@@ -40,7 +40,6 @@ function calculate() {
             console.log("fix your inputs")
             return
         }
-        let yellowCount = 0
         for (let j=0; j<5; j++) {
             let guessLetter = guessWord[j]
             let answerLetter = theWord[j]
@@ -52,6 +51,7 @@ function calculate() {
             } else if (theWord.includes(guessLetter)) {
                 let instances = 0 //how many times the guess letter appears in theWord
                 let greens = 0
+                let yellowCount = 0
                 for (let k=0; k<5; k++) {
                     let innerLetter = theWord[k] //letter of theWord
                     if (innerLetter===guessLetter) {
@@ -59,7 +59,6 @@ function calculate() {
                         if (guessWord[k]===innerLetter) greens++
                     }
                 }
-                if (guessLetter==="m") console.log(instances, greens, yellowCount)
                 if (instances > greens + yellowCount) {
                     results[j].y.push(guessLetter)
                     yellowCount++
@@ -90,7 +89,7 @@ function calculate() {
                 break;
             } 
             for (let letter of results[i].y) {
-                if (!word.includes(letter)) {
+                if (!word.includes(letter) || word[i]===letter) {
                     skipWord = true
                     break;
                 }
@@ -102,7 +101,6 @@ function calculate() {
                     !allResults.g.includes(letter) &&
                     !allResults.y.includes(letter)
                 ) {
-                    if (word==="movie") console.log(letter, allResults)
                     skipWord = true
                     break;
                 }
@@ -112,6 +110,8 @@ function calculate() {
         if (skipWord) continue
         possibilities.push(word)
     }
+    console.log(results)
+    console.log(allResults)
     console.log(possibilities)
 }
 
