@@ -17,7 +17,43 @@ function calculate() {
         return
     }
     let inputs = document.getElementsByName("word-input")
+    let inputStrs = getInputStrs(0, []) //could use filter, but e.g. we dont want input[1] to be blank and input[2] to not be blank
+    if (inputStrs===null) return
 
+    function getInputStrs(index, strArr, endIndex) {
+        let input = inputs[index]
+        let guessWord = input.value.toLowerCase()
+        if (endIndex || endIndex===0) {
+            if (guessWord!=="") { //a prev input is blank, but this one is not
+                console.log("fix your inputs")
+                return null
+            }
+        } else if (guessWord==="") endIndex = index
+        else if (guessWord.length!==5) {
+            console.log("fix your inputs")
+            return null
+        } else strArr.push(guessWord)
+        if (index<5) return getInputStrs(index + 1, strArr, endIndex)
+        else return strArr
+    }
+
+    let result = getInfo(inputStrs, theWord)
+    let slotInfo = result[0].slice(0)
+    let allInfo = result[1]
+
+    let possibilities = getPossibilities(slotInfo, allInfo)
+    console.log(possibilities)
+
+    //use possibilities and info so far to determine most optimal guess
+    if (inputStrs.length===0) return
+    //prevent extremely long calculation
+    //"raise", avg == abt 61 possibilities
+    let optimalGuessResult = findOptimalGuess(possibilities, inputStrs)
+    console.log(optimalGuessResult)
+}
+
+function getInfo(inputs, theWord, someSlotInfo, someInfo) { //inputs==arr of strs; theWord==the answer
+    //calculate info--which letters are b, y, g and in which slots
     let results = [
         {g:[],y:[],b:[]},
         {g:[],y:[],b:[]},
@@ -25,26 +61,27 @@ function calculate() {
         {g:[],y:[],b:[]},
         {g:[],y:[],b:[]}
     ]
+    if (someSlotInfo) results = someSlotInfo.slice(0)
 
     let allResults = {
         g: [],
         y: [],
         b: []
     }
-
-    for (let i=0; i<6; i++) {
-        let input = inputs[i]
-        let guessWord = input.value.toLowerCase()
-        if (guessWord.length===0) break;
-        if (guessWord.length!==5) {
-            console.log("fix your inputs")
-            return
+    if (someInfo) {
+        allResults = {
+            g: someInfo.g.slice(0),
+            y: someInfo.y.slice(0),
+            b: someInfo.b.slice(0)
         }
-        for (let j=0; j<5; j++) {
-            let guessLetter = guessWord[j]
-            let answerLetter = theWord[j]
+    }
+
+    for (let guessWord of inputs) {
+        for (let i=0; i<5; i++) {
+            let guessLetter = guessWord[i]
+            let answerLetter = theWord[i]
             if (guessLetter===answerLetter) {
-                results[j].g.push(guessLetter)
+                results[i].g.push(guessLetter)
                 if (!allResults.g.includes(guessLetter)) {
                     allResults.g.push(guessLetter)
                 }
@@ -52,54 +89,58 @@ function calculate() {
                 let instances = 0 //how many times the guess letter appears in theWord
                 let greens = 0
                 let yellowCount = 0
-                for (let k=0; k<5; k++) {
-                    let innerLetter = theWord[k] //letter of theWord
+                for (let j=0; j<5; j++) {
+                    let innerLetter = theWord[j] //letter of theWord
                     if (innerLetter===guessLetter) {
                         instances++
-                        if (guessWord[k]===innerLetter) greens++
+                        if (guessWord[j]===innerLetter) greens++
                     }
                 }
                 if (instances > greens + yellowCount) {
-                    results[j].y.push(guessLetter)
+                    results[i].y.push(guessLetter)
                     yellowCount++
                     if (!allResults.y.includes(guessLetter)) {
                         allResults.y.push(guessLetter)
                     }
                 } else {
-                    results[j].b.push(guessLetter)
+                    results[i].b.push(guessLetter)
                     if (!allResults.b.includes(guessLetter)) {
                         allResults.b.push(guessLetter)
                     }
                 }
             } else {
-                results[j].b.push(guessLetter)
+                results[i].b.push(guessLetter)
                 if (!allResults.b.includes(guessLetter)) {
                     allResults.b.push(guessLetter)
                 }
             }
         }
     }
+    return [results, allResults]
+}
 
+function getPossibilities(slotInfo, allInfo) {
+    //use info to calculate remaining possibilities
     let possibilities = []
     for (let word of words) {
         let skipWord = false
         for (let i=0; i<5; i++) {
-            if (results[i].g.length && results[i].g[0]!==word[i]) {
+            if (slotInfo[i].g.length && slotInfo[i].g[0]!==word[i]) {
                 skipWord = true
                 break;
             } 
-            for (let letter of results[i].y) {
+            for (let letter of slotInfo[i].y) {
                 if (!word.includes(letter) || word[i]===letter) {
                     skipWord = true
                     break;
                 }
             }
             if (skipWord) break;
-            for (let letter of results[i].b) {
+            for (let letter of slotInfo[i].b) {
                 if (
                     word.includes(letter) &&
-                    !allResults.g.includes(letter) &&
-                    !allResults.y.includes(letter)
+                    !allInfo.g.includes(letter) &&
+                    !allInfo.y.includes(letter)
                 ) {
                     skipWord = true
                     break;
@@ -107,12 +148,33 @@ function calculate() {
             }
             if (skipWord) break;
         }
-        if (skipWord) continue
-        possibilities.push(word)
+        if (!skipWord) possibilities.push(word)
     }
-    console.log(results)
-    console.log(allResults)
-    console.log(possibilities)
+    return possibilities
+}
+
+function findOptimalGuess(pb, inputs) {
+    let finalResults = []
+    let count = 0
+    let loopTotal = pb.length**2
+    for (let pbGuess of pb) {
+        let totalPbs = 0
+        for (let pbAnswer of pb) {
+            let inputsCopy = inputs.slice(0)
+            inputsCopy.push(pbGuess)
+            let infoResult = getInfo(inputsCopy, pbAnswer)
+            let pbResult = getPossibilities(infoResult[0], infoResult[1])
+            totalPbs += pbResult.length
+            count++
+            if (count%1000===0) console.log(`${count}/${loopTotal}`)
+        }
+        finalResults.push({"guess": pbGuess, "avgPbs": totalPbs/pb.length})
+    }
+    let bestResult;
+    for (let result of finalResults) {
+        if (!bestResult || result.avgPbs < bestResult.avgPbs) bestResult = result
+    }
+    return [bestResult, finalResults]
 }
 
 const words = [
