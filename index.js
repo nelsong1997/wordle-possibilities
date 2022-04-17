@@ -157,6 +157,7 @@ function findOptimalGuess(pb, inputs) {
     let finalResults = []
     let count = 0
     let loopTotal = pb.length**2
+    let bestResult;
     for (let pbGuess of pb) {
         let totalPbs = 0
         for (let pbAnswer of pb) {
@@ -168,10 +169,8 @@ function findOptimalGuess(pb, inputs) {
             count++
             if (count%1000===0) console.log(`${count}/${loopTotal}`)
         }
-        finalResults.push({"guess": pbGuess, "avgPbs": totalPbs/pb.length})
-    }
-    let bestResult;
-    for (let result of finalResults) {
+        let avgPbs = totalPbs/length
+        finalResults.push({"guess": pbGuess, "avgPbs": avgPbs})
         if (!bestResult || result.avgPbs < bestResult.avgPbs) bestResult = result
     }
     return [bestResult, finalResults]
