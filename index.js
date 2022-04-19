@@ -154,6 +154,7 @@ function getPossibilities(slotInfo, allInfo) {
 }
 
 function findOptimalGuess(pb, inputs) {
+    //inputs == user inputs
     let finalResults = []
     let count = 0
     let loopTotal = pb.length**2
@@ -169,9 +170,10 @@ function findOptimalGuess(pb, inputs) {
             count++
             if (count%1000===0) console.log(`${count}/${loopTotal}`)
         }
-        let avgPbs = totalPbs/length
-        finalResults.push({"guess": pbGuess, "avgPbs": avgPbs})
-        if (!bestResult || result.avgPbs < bestResult.avgPbs) bestResult = result
+        let avgPbs = totalPbs/pb.length
+        let theResult = {"guess": pbGuess, "avgPbs": avgPbs}
+        finalResults.push(theResult)
+        if (!bestResult || theResult.avgPbs < bestResult.avgPbs) bestResult = theResult
     }
     return [bestResult, finalResults]
 }
